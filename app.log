@@ -1,0 +1,18 @@
+2024-10-13 20:08:52,627 - utils - WARNING - Using placeholder values for some configuration items. The system may not function correctly until all required secrets are provided.
+2024-10-13 20:08:52,995 - utils - ERROR - A critical error occurred: [Errno 2] No such file or directory: 'placeholder_google_sheets_credentials'
+2024-10-13 20:08:52,996 - utils - INFO - Shutting down the system due to a critical error.
+2024-10-14 19:47:30,575 - utils - WARNING - Using placeholder values for some configuration items. The system may not function correctly until all required secrets are provided.
+2024-10-14 19:47:30,914 - utils - ERROR - A critical error occurred: [Errno 2] No such file or directory: 'placeholder_google_sheets_credentials'
+2024-10-14 19:47:30,915 - utils - INFO - Shutting down the system due to a critical error.
+2024-10-15 01:57:22,771 - utils - WARNING - Using placeholder values for some configuration items. The system may not function correctly until all required secrets are provided.
+2024-10-15 01:57:22,771 - utils - ERROR - A critical error occurred: [Errno 2] No such file or directory: 'placeholder_google_sheets_credentials'
+2024-10-15 01:57:22,771 - utils - INFO - Shutting down the system due to a critical error.
+2024-10-15 02:03:07,377 - utils - WARNING - Using placeholder values for some configuration items. The system may not function correctly until all required secrets are provided.
+2024-10-15 02:03:07,379 - utils - ERROR - A critical error occurred: [Errno 2] No such file or directory: 'placeholder_google_sheets_credentials'
+2024-10-15 02:03:07,379 - utils - INFO - Shutting down the system due to a critical error.
+2024-10-15 02:09:02,354 - utils - WARNING - Using placeholder values for some configuration items. The system may not function correctly until all required secrets are provided.
+2024-10-15 02:09:02,354 - utils - ERROR - A critical error occurred: [Errno 2] No such file or directory: 'placeholder_google_sheets_credentials'
+2024-10-15 02:09:02,354 - utils - INFO - Shutting down the system due to a critical error.
+2024-10-15 02:19:44,740 - utils - WARNING - Using placeholder values for some configuration items. The system may not function correctly until all required secrets are provided.
+2024-10-15 02:19:44,740 - utils - ERROR - A critical error occurred: [Errno 2] No such file or directory: 'placeholder_google_sheets_credentials'
+2024-10-15 02:19:44,740 - utils - INFO - Shutting down the system due to a critical error.
