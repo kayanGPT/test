@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Processing Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .logout-btn, .register-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .register-btn {
+            background-color: #4CAF50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        button {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            padding: 3px;
+            border-radius: 3px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
+        }
+        .progress-bar-fill {
+            display: block;
+            height: 22px;
+            background-color: #659cef;
+            border-radius: 3px;
+            transition: width 500ms ease-in-out;
+        }
+        .error-log {
+            color: red;
+            margin-top: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .status {
+            font-weight: bold;
+        }
+        .completed {
+            color: green;
+        }
+        .in-progress {
+            color: orange;
+        }
+        .error {
+            color: red;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .flash-message.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .flash-message.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .refresh-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        .search-input {
+            padding: 5px;
+            width: 300px;
+        }
+        .sort-header {
+            cursor: pointer;
+        }
+        .sort-header:hover {
+            background-color: #e0e0e0;
+        }
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .nav-links a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Video Processing Dashboard</h1>
+        <div>
+            <a href="{{ url_for('register_with_payment') }}" class="register-btn">Register with Payment</a>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+            <button class="refresh-btn" onclick="refreshDashboard()">Refresh Dashboard</button>
+        </div>
+    </div>
+    
+    <div class="nav-links">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('content_calendar') }}">Content Calendar</a>
+    </div>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by Video ID or Title">
+    </div>
+
+    <table id="projectsTable">
+        <thead>
+            <tr>
+                <th class="sort-header" onclick="sortTable(0)">Video ID</th>
+                <th class="sort-header" onclick="sortTable(1)">Title</th>
+                <th class="sort-header" onclick="sortTable(2)">Overall Status</th>
+                <th>Shorts Creation</th>
+                <th>Video Merging</th>
+                <th>Transcription</th>
+                <th>Social Media Posting</th>
+                <th>Actions</th>
+                <th>Error Logs</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for project in projects %}
+            <tr id="project-{{ project.id }}">
+                <td>{{ project.id }}</td>
+                <td>{{ project.title }}</td>
+                <td class="overall-status">{{ project.status }}</td>
+                <td>
+                    <div class="progress-bar">
+                        <span class="progress-bar-fill" style="width: {{ '100%' if project.shorts_status == 'Completed' else '50%' if project.shorts_status == 'In Progress' else '0%' }}"></span>
+                    </div>
+                    <span class="status {{ 'completed' if project.shorts_status == 'Completed' else 'in-progress' if project.shorts_status == 'In Progress' else 'error' }}">{{ project.shorts_status }}</span>
+                </td>
+                <td>
+                    <div class="progress-bar">
+                        <span class="progress-bar-fill" style="width: {{ '100%' if project.merge_status == 'Completed' else '50%' if project.merge_status == 'In Progress' else '0%' }}"></span>
+                    </div>
+                    <span class="status {{ 'completed' if project.merge_status == 'Completed' else 'in-progress' if project.merge_status == 'In Progress' else 'error' }}">{{ project.merge_status }}</span>
+                </td>
+                <td>
+                    <div class="progress-bar">
+                        <span class="progress-bar-fill" style="width: {{ '100%' if project.transcription_status == 'Completed' else '50%' if project.transcription_status == 'In Progress' else '0%' }}"></span>
+                    </div>
+                    <span class="status {{ 'completed' if project.transcription_status == 'Completed' else 'in-progress' if project.transcription_status == 'In Progress' else 'error' }}">{{ project.transcription_status }}</span>
+                </td>
+                <td>
+                    <div class="progress-bar">
+                        <span class="progress-bar-fill" style="width: {{ '100%' if project.social_media_status == 'Completed' else '50%' if project.social_media_status == 'In Progress' else '0%' }}"></span>
+                    </div>
+                    <span class="status {{ 'completed' if project.social_media_status == 'Completed' else 'in-progress' if project.social_media_status == 'In Progress' else 'error' }}">{{ project.social_media_status }}</span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button onclick="retryProcess('{{ project.id }}', 'shorts')">Retry Shorts</button>
+                        <button onclick="retryProcess('{{ project.id }}', 'merge')">Retry Merge</button>
+                        <button onclick="retryProcess('{{ project.id }}', 'transcription')">Retry Transcription</button>
+                        <button onclick="retryProcess('{{ project.id }}', 'social_media')">Retry Social Media</button>
+                        <button onclick="skipProcess('{{ project.id }}', 'shorts')">Skip Shorts</button>
+                        <button onclick="skipProcess('{{ project.id }}', 'merge')">Skip Merge</button>
+                        <button onclick="skipProcess('{{ project.id }}', 'transcription')">Skip Transcription</button>
+                        <button onclick="skipProcess('{{ project.id }}', 'social_media')">Skip Social Media</button>
+                    </div>
+                </td>
+                <td>
+                    <button onclick="toggleErrorLogs('{{ project.id }}')">Toggle Error Logs</button>
+                    <div id="error-logs-{{ project.id }}" class="error-log"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('status_update', (data) => {
+            const projectRow = $(`#project-${data.video_id}`);
+            if (data.status) {
+                projectRow.find('.overall-status').text(data.status);
+            }
+            
+            if (data.process) {
+                const processCell = projectRow.find(`td:contains(${data.process})`);
+                if (processCell.length) {
+                    const progressBar = processCell.find('.progress-bar-fill');
+                    const statusSpan = processCell.find('.status');
+                    
+                    if (data.status === 'Completed') {
+                        progressBar.css('width', '100%');
+                        statusSpan.removeClass('in-progress error').addClass('completed');
+                    } else if (data.status.startsWith('Retrying') || data.status === 'In Progress') {
+                        progressBar.css('width', '50%');
+                        statusSpan.removeClass('completed error').addClass('in-progress');
+                    } else {
+                        progressBar.css('width', '0%');
+                        statusSpan.removeClass('completed in-progress').addClass('error');
+                    }
+                    
+                    statusSpan.text(data.status);
+                }
+            }
+        });
+
+        function retryProcess(videoId, process) {
+            $.post(`/retry_process/${videoId}/${process}`, () => {
+                console.log(`Retrying ${process} for video ${videoId}`);
+            });
+        }
+
+        function skipProcess(videoId, process) {
+            $.post(`/skip_process/${videoId}/${process}`, () => {
+                console.log(`Skipping ${process} for video ${videoId}`);
+            });
+        }
+
+        function toggleErrorLogs(videoId) {
+            const errorLogsDiv = $(`#error-logs-${videoId}`);
+            if (errorLogsDiv.is(':empty')) {
+                $.get(`/get_logs/${videoId}`, (data) => {
+                    errorLogsDiv.empty();
+                    
+                    for (const [process, errors] of Object.entries(data)) {
+                        errorLogsDiv.append(`<h4>${process} Errors:</h4>`);
+                        errors.forEach(error => {
+                            const timestamp = new Date(error.timestamp).toLocaleString();
+                            errorLogsDiv.append(`<p>[${timestamp}] ${error.message}</p>`);
+                        });
+                    }
+                    
+                    errorLogsDiv.slideDown();
+                });
+            } else {
+                errorLogsDiv.slideToggle();
+            }
+        }
+
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        function sortTable(n) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById("projectsTable");
+            switching = true;
+            dir = "asc";
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount ++;
+                } else {
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+
+        $(document).ready(function() {
+            $("#searchInput").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#projectsTable tbody tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+    </script>
+</body>
+</html>

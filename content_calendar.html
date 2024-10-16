@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        input, select {
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .flash-message.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .flash-message.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Content Calendar</h1>
+        
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <h2>Add New Event</h2>
+        <form action="{{ url_for('add_calendar_event') }}" method="POST">
+            <select name="video_id" required>
+                <option value="">Select Video</option>
+                {% for video in videos %}
+                    <option value="{{ video.id }}">{{ video.title }}</option>
+                {% endfor %}
+            </select>
+            <select name="platform" required>
+                <option value="">Select Platform</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Twitter">Twitter</option>
+                <option value="Instagram">Instagram</option>
+            </select>
+            <input type="datetime-local" name="scheduled_time" required>
+            <button type="submit">Add Event</button>
+        </form>
+
+        <h2>Scheduled Events</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Video Title</th>
+                    <th>Platform</th>
+                    <th>Scheduled Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                    <tr>
+                        <td>{{ event.title }}</td>
+                        <td>{{ event.platform }}</td>
+                        <td>{{ event.scheduled_time }}</td>
+                        <td>{{ event.status }}</td>
+                        <td>
+                            <form action="{{ url_for('update_calendar_event', event_id=event.id) }}" method="POST" style="display: inline;">
+                                <select name="status">
+                                    <option value="Scheduled" {% if event.status == 'Scheduled' %}selected{% endif %}>Scheduled</option>
+                                    <option value="Posted" {% if event.status == 'Posted' %}selected{% endif %}>Posted</option>
+                                    <option value="Failed" {% if event.status == 'Failed' %}selected{% endif %}>Failed</option>
+                                </select>
+                                <button type="submit">Update</button>
+                            </form>
+                            <form action="{{ url_for('delete_calendar_event', event_id=event.id) }}" method="POST" style="display: inline;">
+                                <button type="submit" onclick="return confirm('Are you sure you want to delete this event?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
